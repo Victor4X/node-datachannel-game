@@ -2,15 +2,20 @@
 const nodeDataChannel = require('node-datachannel');
 const WebSocket = require('ws');
 const readline = require('readline');
+// .env vars
+require("dotenv").config();
 
 // Init Logger
 nodeDataChannel.initLogger('Error');
 
 // PeerConnection Map
-const pcMap = {};
+const peerConnectionMap = {};
+
+// DataChannel Map
+const dataChannelMap = {};
 
 // Local ID
-const id = randomId(4);
+const id = `server-${randomId(4)}`;
 
 // Signaling Server
 const WS_URL = process.env.WS_URL || 'ws://localhost:8081';
@@ -35,13 +40,13 @@ ws.on('message', (msgStr) => {
     switch (msg.type) {
         case 'offer':
             createPeerConnection(msg.id);
-            pcMap[msg.id].setRemoteDescription(msg.description, msg.type);
+            peerConnectionMap[msg.id].setRemoteDescription(msg.description, msg.type);
             break;
         case 'answer':
-            pcMap[msg.id].setRemoteDescription(msg.description, msg.type);
+            peerConnectionMap[msg.id].setRemoteDescription(msg.description, msg.type);
             break;
         case 'candidate':
-            pcMap[msg.id].addRemoteCandidate(msg.candidate, msg.mid);
+            peerConnectionMap[msg.id].addRemoteCandidate(msg.candidate, msg.mid);
             break;
 
         default:
@@ -56,25 +61,20 @@ function readUserInput() {
         output: process.stdout,
     });
 
-    rl.question('Enter a remote ID to send an offer:\n', (peerId) => {
-        if (peerId && peerId.length > 2) {
-            console.log('Offering to ', peerId);
-            createPeerConnection(peerId);
-
-            console.log('Creating DataChannel with label "test"');
-            let dc = pcMap[peerId].createDataChannel('test');
-            dc.onOpen(() => {
-                dc.sendMessage('Hello from ' + id);
-            });
-
-            dc.onMessage((msg) => {
-                console.log('Message from ' + peerId + ' received:', msg);
-            });
+    rl.question('Enter a message to send to peers:\n', (message) => {
+        if (message.length > 0) {
+            sendToAllChannels(message);
         }
-
         rl.close();
         readUserInput();
     });
+}
+
+function sendToAllChannels(message) {
+    Object.values(dataChannelMap).forEach(dc => {
+        dc.send(message);
+    });
+    console.log(`Sent to ${Object.entries(dataChannelMap).length} peers`);
 }
 
 function createPeerConnection(peerId) {
@@ -99,9 +99,11 @@ function createPeerConnection(peerId) {
             console.log('Message from ' + peerId + ' received:', msg);
         });
         dc.sendMessage('Hello From ' + id);
+
+        dataChannelMap[peerId] = dc;
     });
 
-    pcMap[peerId] = peerConnection;
+    peerConnectionMap[peerId] = peerConnection;
 }
 
 function randomId(length) {
