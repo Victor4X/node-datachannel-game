@@ -72,7 +72,7 @@ function readUserInput() {
 
 function sendToAllChannels(message) {
     Object.values(dataChannelMap).forEach(dc => {
-        dc.send(message);
+        dc.sendMessage(message);
     });
     console.log(`Sent to ${Object.entries(dataChannelMap).length} peers`);
 }
