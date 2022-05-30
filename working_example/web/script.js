@@ -245,6 +245,8 @@ window.onload = (() => {
 
         function appendMessage(message, sender = "info") {
             messageArea.append(`[${sender}]: ${message}\n`);
+            // Auto scroll to bottom
+            messageArea.scrollTop = messageArea.scrollHeight;
         }
 
         function sendLocalDescription(ws, id, pc, type) {
