@@ -90,7 +90,11 @@ function createPeerConnection(peerId) {
     // Create PeerConnection
     let peerConnection = new nodeDataChannel.PeerConnection('pc', { iceServers: ['stun:stun.l.google.com:19302'] });
     peerConnection.onStateChange((state) => {
-        console.log('State: ', state);
+        console.log(`State update for ${peerId}: ${state}`);
+        if (state == 'disconnected'){
+            delete peerConnectionMap[peerId];
+            delete dataChannelMap[peerId];
+        }
     });
     peerConnection.onGatheringStateChange((state) => {
         console.log('GatheringState: ', state);
