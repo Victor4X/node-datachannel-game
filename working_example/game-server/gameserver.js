@@ -29,6 +29,7 @@ console.log(`Waiting for signaling to be connected...`);
 ws.on('open', () => {
     console.log('WebSocket connected, signaling ready');
     readUserInput();
+    setInterval(sendGameData, 10000);
 });
 
 ws.on('error', (err) => {
@@ -70,11 +71,19 @@ function readUserInput() {
     });
 }
 
+function sendGameData() {
+    if (Object.values(dataChannelMap).length == 0){
+        return;
+    }
+    let data = randomId(10);
+    sendToAllChannels(data);
+}
+
 function sendToAllChannels(message) {
     Object.values(dataChannelMap).forEach(dc => {
         dc.sendMessage(message);
     });
-    console.log(`Sent to ${Object.entries(dataChannelMap).length} peers`);
+    console.log(`Sent message to ${Object.entries(dataChannelMap).length} peers`);
 }
 
 function createPeerConnection(peerId) {

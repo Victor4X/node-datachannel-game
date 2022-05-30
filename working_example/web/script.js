@@ -76,6 +76,9 @@ window.onload = (() => {
                     offerPeerConnection(ws, offerId.value);
                     offerId.value = null;
                 };
+                publicRefreshBtn.disabled = false;
+                publicRefreshBtn.onclick = () => updatePubliclist();
+                updatePubliclist();
             })
             .catch((err) => console.error(err));
 
@@ -173,14 +176,10 @@ window.onload = (() => {
             dc.onopen = () => {
                 console.log(`DataChannel from ${id} open`);
                 updatePeerlist();
-                updatePubliclist();
 
                 sendMsg.disabled = false;
                 sendBtn.disabled = false;
                 sendBtn.onclick = () => sendToAllChannels(sendMsg.value);
-
-                publicRefreshBtn.disabled = false;
-                publicRefreshBtn.onclick = () => updatePubliclist();
 
                 sendWhisperMsg.disabled = false;
                 sendWhisperPeer.disabled = false;
@@ -214,7 +213,7 @@ window.onload = (() => {
         }
 
         function sendToPeer(message, peerId) {
-            if(dataChannelMap[peerId]){
+            if (dataChannelMap[peerId]) {
                 dataChannelMap[peerId].send(message);
                 appendMessage(message, `${localId}->${peerId}`);
             } else {
@@ -225,12 +224,23 @@ window.onload = (() => {
         function updatePeerlist() {
             peerList.innerHTML = "";
             Object.keys(dataChannelMap).forEach(id => peerList.append(id + '\n'));
+            updatePubliclist();
         }
 
         function updatePubliclist() {
             // Get list from server
+            let xmlHttpReq = new XMLHttpRequest();
+            xmlHttpReq.open("GET", `http://${baseUrl}/servers`, false);
+            xmlHttpReq.send(null);
+            let responseText = xmlHttpReq.responseText;
+            let servers = JSON.parse(responseText);
             // Remove already connected
             publicList.innerHTML = "";
+            Object.values(servers).forEach(id => {
+                if (dataChannelMap[id] == null && localId != id) {
+                    publicList.append(id + '\n');
+                }
+            });
         }
 
         function appendMessage(message, sender = "info") {
