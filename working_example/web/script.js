@@ -17,7 +17,21 @@
  * along with this program; If not, see <http://www.gnu.org/licenses/>.
  */
 
-window.addEventListener('load', () => {
+window.onload = (() => {
+
+const connectBtn = document.getElementById("connectBtn");
+
+connectBtn.onclick = ('click', () => {
+
+const urlInput = document.getElementById("urlInput");
+const portInput = document.getElementById("portInput");
+
+
+const baseUrl = urlInput.value + ":" + portInput.value;
+
+if (baseUrl.length < 5){
+  return;
+}
 
 const config = {
   iceServers : [ {
@@ -26,8 +40,7 @@ const config = {
 };
 
 const localId = randomId(4);
-
-const url = `ws://localhost:8081/${localId}`;
+const url = `ws://${baseUrl}/${localId}`;
 
 const peerConnectionMap = {};
 const dataChannelMap = {};
@@ -43,6 +56,9 @@ console.log('Connecting to signaling...');
 openSignaling(url)
     .then((ws) => {
       console.log('WebSocket connected, signaling ready');
+      urlInput.disabled = true;
+      portInput.disabled = true;
+      connectBtn.disabled = true;
       offerId.disabled = false;
       offerBtn.disabled = false;
       offerBtn.onclick = () => offerPeerConnection(ws, offerId.value);
@@ -190,4 +206,5 @@ function randomId(length) {
   return [...Array(length) ].map(pickRandom).join('');
 }
 
+});
 });
