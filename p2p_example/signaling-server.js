@@ -3,7 +3,11 @@ const WebSocket = require('ws');
 
 const clients = {};
 
-const wss = new WebSocket.Server({ port: 8000 });
+const port = 8081;
+
+const wss = new WebSocket.Server({ port });
+
+console.log("Listening on port: " + port);
 
 wss.on('connection', (ws, req) => {
     const id = req.url.replace('/', '');

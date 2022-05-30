@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-const nodeDataChannel = require('../../lib/index');
+const nodeDataChannel = require('node-datachannel');
 const WebSocket = require('ws');
 const readline = require('readline');
 
@@ -13,7 +13,7 @@ const pcMap = {};
 const id = randomId(4);
 
 // Signaling Server
-const WS_URL = process.env.WS_URL || 'ws://localhost:8000';
+const WS_URL = process.env.WS_URL || 'ws://localhost:8081';
 const ws = new WebSocket(WS_URL + '/' + id, {
     perMessageDeflate: false,
 });
@@ -87,6 +87,7 @@ function createPeerConnection(peerId) {
         console.log('GatheringState: ', state);
     });
     peerConnection.onLocalDescription((description, type) => {
+        console.log("testing");
         ws.send(JSON.stringify({ id: peerId, type, description }));
     });
     peerConnection.onLocalCandidate((candidate, mid) => {

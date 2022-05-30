@@ -1,0 +1,35 @@
+<!--
+HTML index for the example client.
+
+Brian Ho
+brian@brkho.com
+ -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>P2P Client</title>
+    <script src="example-client.js"></script>
+    <link rel="stylesheet" href="main.css" />
+</head>
+
+<body>
+    <button id="connect-button" onclick="connect()">Connect to signaling server</button>
+    <p id="ws-status">Disconnected</p>
+    <div id="log-div" style="display:none ;">
+        <p id="id-paragraph">No id??</p>
+        <input id="peer-input" type="text" placeholder="ID to connect to here">
+        <button id="add-peer-button" onclick="addPeer()">Add peer</button>
+        <br>
+        <textarea id="log-area" cols="30" rows="10" disabled="true"></textarea>
+        <br>
+        <div id="peer-communication">
+            <input id="message-input" type="text" placeholder="Type message here">
+            <button id="send-msg-button" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+</body>
+
+</html>
