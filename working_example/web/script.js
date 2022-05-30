@@ -148,7 +148,6 @@ function createPeerConnection(ws, id) {
 
     sendMsg.disabled = false;
     sendBtn.disabled = false;
-    sendBtn.onclick = () => dc.send(sendMsg.value);
   };
 
   peerConnectionMap[id] = pc;
@@ -162,9 +161,12 @@ function setupDataChannel(dc, id) {
 
     sendMsg.disabled = false;
     sendBtn.disabled = false;
-    sendBtn.onclick = () => dc.send(sendMsg.value);
+    sendBtn.onclick = () => sendToChannels(sendMsg.value);
   };
-  dc.onclose = () => { console.log(`DataChannel from ${id} closed`); };
+  dc.onclose = () => { console.log(
+    `DataChannel from ${id} closed`);
+    delete dataChannelMap[id];
+  };
   dc.onmessage = (e) => {
     if (typeof (e.data) != 'string')
       return;
@@ -174,6 +176,10 @@ function setupDataChannel(dc, id) {
 
   dataChannelMap[id] = dc;
   return dc;
+}
+
+function sendToChannels(message){
+  Object.values(dataChannelMap).forEach(dc => dc.send(message));
 }
 
 function sendLocalDescription(ws, id, pc, type) {
