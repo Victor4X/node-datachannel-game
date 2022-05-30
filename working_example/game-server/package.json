@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "node-datachannel": "^0.3.2",
+    "ws": "^8.7.0"
+  }
+}
