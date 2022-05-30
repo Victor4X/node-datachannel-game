@@ -14,14 +14,22 @@
         <input type="button" id="connectBtn" value="Connect">
         <h2>Local ID</h2>
         <p id="localId"></p>
+        <h2>Connected Peers</h2>
+        <pre id="peerList"></pre>
         <h2>Send an offer through signaling</h2>
 		<input type="text" id="offerId" placeholder="remote ID" disabled>
 		<input type="button" id="offerBtn" value="Offer" disabled>
 		<br>
-        <h2>Send a message through DataChannel</h2>
+        <h2>Send a message through all connected DataChannels</h2>
         <input type="text" id="sendMsg" placeholder="message" disabled>
         <input type="button" id="sendBtn" value="Send" disabled>
+        <h2>Send a message to specific peer's DataChannel</h2>
+        <input type="text" id="sendWhisperMsg" placeholder="message" disabled>
+        <input type="text" id="sendWhisperPeer" placeholder="peerId" disabled>
+        <input type="button" id="sendWhisperBtn" value="Send" disabled>
         <br>
+        <h2>Message area</h2>
+        <textarea id="messageArea" cols="30" rows="10"></textarea>
     </body>
 </html>
 

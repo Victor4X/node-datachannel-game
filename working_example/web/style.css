@@ -18,3 +18,7 @@ input[type="text"] {
 	padding: 0.4em;
 }
 
+#messageArea
+{
+    user-select: none;
+}

@@ -19,198 +19,241 @@
 
 window.onload = (() => {
 
-const connectBtn = document.getElementById("connectBtn");
+    const connectBtn = document.getElementById('connectBtn');
 
-connectBtn.onclick = ('click', () => {
+    connectBtn.onclick = ('click', () => {
 
-const urlInput = document.getElementById("urlInput");
-const portInput = document.getElementById("portInput");
+        const urlInput = document.getElementById('urlInput');
+        const portInput = document.getElementById('portInput');
 
 
-const baseUrl = urlInput.value + ":" + portInput.value;
+        const baseUrl = urlInput.value + ':' + portInput.value;
 
-if (baseUrl.length < 5){
-  return;
-}
+        if (baseUrl.length < 5) {
+            return;
+        }
 
-const config = {
-  iceServers : [ {
-    urls : 'stun:stun.l.google.com:19302', // change to your STUN server
-  } ],
-};
+        const config = {
+            iceServers: [{
+                urls: 'stun:stun.l.google.com:19302', // change to your STUN server
+            }],
+        };
 
-const localId = randomId(4);
-const url = `ws://${baseUrl}/${localId}`;
+        const localId = randomId(4);
+        const url = `ws://${baseUrl}/${localId}`;
 
-const peerConnectionMap = {};
-const dataChannelMap = {};
+        const peerConnectionMap = {};
+        const dataChannelMap = {};
 
-const offerId = document.getElementById('offerId');
-const offerBtn = document.getElementById('offerBtn');
-const sendMsg = document.getElementById('sendMsg');
-const sendBtn = document.getElementById('sendBtn');
-const _localId = document.getElementById('localId');
-_localId.textContent = localId;
+        const peerList = document.getElementById('peerList');
+        const messageArea = document.getElementById('messageArea');
 
-console.log('Connecting to signaling...');
-openSignaling(url)
-    .then((ws) => {
-      console.log('WebSocket connected, signaling ready');
-      urlInput.disabled = true;
-      portInput.disabled = true;
-      connectBtn.disabled = true;
-      offerId.disabled = false;
-      offerBtn.disabled = false;
-      offerBtn.onclick = () => offerPeerConnection(ws, offerId.value);
-    })
-    .catch((err) => console.error(err));
+        const offerId = document.getElementById('offerId');
+        const offerBtn = document.getElementById('offerBtn');
 
-function openSignaling(url) {
-  return new Promise((resolve, reject) => {
-    const ws = new WebSocket(url);
-    ws.onopen = () => resolve(ws);
-    ws.onerror = () => reject(new Error('WebSocket error'));
-    ws.onclose = () => console.error('WebSocket disconnected');
-    ws.onmessage = (e) => {
-      if (typeof (e.data) != 'string')
-        return;
-      const message = JSON.parse(e.data);
-      console.log(message);
-      const {id, type} = message;
+        const sendMsg = document.getElementById('sendMsg');
+        const sendBtn = document.getElementById('sendBtn');
 
-      let pc = peerConnectionMap[id];
-      if (!pc) {
-        if (type != 'offer')
-          return;
+        const sendWhisperMsg = document.getElementById('sendWhisperMsg');
+        const sendWhisperPeer = document.getElementById('sendWhisperPeer');
+        const sendWhisperBtn = document.getElementById('sendWhisperBtn');
 
-        // Create PeerConnection for answer
-        console.log(`Answering to ${id}`);
-        pc = createPeerConnection(ws, id);
-      }
+        const _localId = document.getElementById('localId');
+        _localId.textContent = localId;
 
-      switch (type) {
-      case 'offer':
-      case 'answer':
-        pc.setRemoteDescription({
-            sdp : message.description,
-            type : message.type,
-          }).then(() => {
-          if (type == 'offer') {
-            // Send answer
-            sendLocalDescription(ws, id, pc, 'answer');
-          }
-        });
-        break;
+        console.log('Connecting to signaling...');
+        openSignaling(url)
+            .then((ws) => {
+                console.log('WebSocket connected, signaling ready');
+                urlInput.disabled = true;
+                portInput.disabled = true;
+                connectBtn.disabled = true;
+                offerId.disabled = false;
+                offerBtn.disabled = false;
+                offerBtn.onclick = () => {
+                    offerPeerConnection(ws, offerId.value);
+                    offerId.value = null;
+                };
+            })
+            .catch((err) => console.error(err));
 
-      case 'candidate':
-        pc.addIceCandidate({
-          candidate : message.candidate,
-          sdpMid : message.mid,
-        });
-        break;
-      }
-    }
-  });
-}
+        function openSignaling(url) {
+            return new Promise((resolve, reject) => {
+                const ws = new WebSocket(url);
+                ws.onopen = () => resolve(ws);
+                ws.onerror = () => reject(new Error('WebSocket error'));
+                ws.onclose = () => console.error('WebSocket disconnected');
+                ws.onmessage = (e) => {
+                    if (typeof (e.data) != 'string')
+                        return;
+                    const message = JSON.parse(e.data);
+                    console.log(message);
+                    const { id, type } = message;
 
-function offerPeerConnection(ws, id) {
-  // Create PeerConnection
-  console.log(`Offering to ${id}`);
-  pc = createPeerConnection(ws, id);
+                    let pc = peerConnectionMap[id];
+                    if (!pc) {
+                        if (type != 'offer')
+                            return;
 
-  // Create DataChannel
-  const label = "test";
-  console.log(`Creating DataChannel with label "${label}"`);
-  const dc = pc.createDataChannel(label);
-  setupDataChannel(dc, id);
+                        // Create PeerConnection for answer
+                        console.log(`Answering to ${id}`);
+                        pc = createPeerConnection(ws, id);
+                    }
 
-  // Send offer
-  sendLocalDescription(ws, id, pc, 'offer');
-}
+                    switch (type) {
+                        case 'offer':
+                        case 'answer':
+                            pc.setRemoteDescription({
+                                sdp: message.description,
+                                type: message.type,
+                            }).then(() => {
+                                if (type == 'offer') {
+                                    // Send answer
+                                    sendLocalDescription(ws, id, pc, 'answer');
+                                }
+                            });
+                            break;
 
-// Create and setup a PeerConnection
-function createPeerConnection(ws, id) {
-  const pc = new RTCPeerConnection(config);
-  pc.oniceconnectionstatechange = () => console.log(`Connection state: ${pc.iceConnectionState}`);
-  pc.onicegatheringstatechange = () => console.log(`Gathering state: ${pc.iceGatheringState}`);
-  pc.onicecandidate = (e) => {
-    if (e.candidate && e.candidate.candidate) {
-      // Send candidate
-      sendLocalCandidate(ws, id, e.candidate);
-    }
-  };
-  pc.ondatachannel = (e) => {
-    const dc = e.channel;
-    console.log(`"DataChannel from ${id} received with label "${dc.label}"`);
-    setupDataChannel(dc, id);
+                        case 'candidate':
+                            pc.addIceCandidate({
+                                candidate: message.candidate,
+                                sdpMid: message.mid,
+                            });
+                            break;
+                    }
+                }
+            });
+        }
 
-    dc.send(`Hello from ${localId}`);
+        function offerPeerConnection(ws, id) {
+            // Create PeerConnection
+            console.log(`Offering to ${id}`);
+            pc = createPeerConnection(ws, id);
 
-    sendMsg.disabled = false;
-    sendBtn.disabled = false;
-  };
+            // Create DataChannel
+            const label = "test";
+            console.log(`Creating DataChannel with label "${label}"`);
+            const dc = pc.createDataChannel(label);
+            setupDataChannel(dc, id);
 
-  peerConnectionMap[id] = pc;
-  return pc;
-}
+            // Send offer
+            sendLocalDescription(ws, id, pc, 'offer');
+        }
 
-// Setup a DataChannel
-function setupDataChannel(dc, id) {
-  dc.onopen = () => {
-    console.log(`DataChannel from ${id} open`);
+        // Create and setup a PeerConnection
+        function createPeerConnection(ws, id) {
+            const pc = new RTCPeerConnection(config);
+            pc.oniceconnectionstatechange = () => console.log(`Connection state: ${pc.iceConnectionState}`);
+            pc.onicegatheringstatechange = () => console.log(`Gathering state: ${pc.iceGatheringState}`);
+            pc.onicecandidate = (e) => {
+                if (e.candidate && e.candidate.candidate) {
+                    // Send candidate
+                    sendLocalCandidate(ws, id, e.candidate);
+                }
+            };
+            pc.ondatachannel = (e) => {
+                const dc = e.channel;
+                console.log(`DataChannel from ${id} received with label "${dc.label}"`);
+                appendMessage(`DataChannel from ${id} received with label "${dc.label}"`);
+                setupDataChannel(dc, id);
 
-    sendMsg.disabled = false;
-    sendBtn.disabled = false;
-    sendBtn.onclick = () => sendToChannels(sendMsg.value);
-  };
-  dc.onclose = () => { console.log(
-    `DataChannel from ${id} closed`);
-    delete dataChannelMap[id];
-  };
-  dc.onmessage = (e) => {
-    if (typeof (e.data) != 'string')
-      return;
-    console.log(`Message from ${id} received: ${e.data}`);
-    document.body.appendChild(document.createTextNode(e.data));
-  };
+                dc.send(`Hello from ${localId}`);
+                // Show own message as well
+                appendMessage(`Hello from ${localId}`, localId);
+            };
 
-  dataChannelMap[id] = dc;
-  return dc;
-}
+            peerConnectionMap[id] = pc;
+            return pc;
+        }
 
-function sendToChannels(message){
-  Object.values(dataChannelMap).forEach(dc => dc.send(message));
-}
+        // Setup a DataChannel
+        function setupDataChannel(dc, id) {
+            dc.onopen = () => {
+                console.log(`DataChannel from ${id} open`);
+                updatePeerlist();
 
-function sendLocalDescription(ws, id, pc, type) {
-  (type == 'offer' ? pc.createOffer() : pc.createAnswer())
-      .then((desc) => pc.setLocalDescription(desc))
-      .then(() => {
-        const {sdp, type} = pc.localDescription;
-        ws.send(JSON.stringify({
-          id,
-          type,
-          description : sdp,
-        }));
-      });
-}
+                sendMsg.disabled = false;
+                sendBtn.disabled = false;
+                sendBtn.onclick = () => sendToAllChannels(sendMsg.value);
 
-function sendLocalCandidate(ws, id, cand) {
-  const {candidate, sdpMid} = cand;
-  ws.send(JSON.stringify({
-    id,
-    type : 'candidate',
-    candidate,
-    mid : sdpMid,
-  }));
-}
+                sendWhisperMsg.disabled = false;
+                sendWhisperPeer.disabled = false;
+                sendWhisperBtn.disabled = false;
+                sendWhisperBtn.onclick = () => sendToPeer(sendWhisperMsg.value, sendWhisperPeer.value);
+            };
+            dc.onclose = () => {
+                console.log(
+                    `DataChannel from ${id} closed`);
+                appendMessage(`DataChannel from ${id} closed`);
+                delete dataChannelMap[id];
+                updatePeerlist();
+            };
+            dc.onmessage = (e) => {
+                if (typeof (e.data) != 'string')
+                    return;
+                console.log(`Message from ${id} received: ${e.data}`);
+                appendMessage(e.data, id);
+            };
 
-// Helper function to generate a random ID
-function randomId(length) {
-  const characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-  const pickRandom = () => characters.charAt(Math.floor(Math.random() * characters.length));
-  return [...Array(length) ].map(pickRandom).join('');
-}
+            dataChannelMap[id] = dc;
+            return dc;
+        }
 
-});
+        function sendToAllChannels(message) {
+            Object.values(dataChannelMap).forEach(dc => {
+                dc.send(message);
+            });
+            // Show own message
+            appendMessage(message, localId);
+        }
+
+        function sendToPeer(message, peerId) {
+            if(dataChannelMap[peerId]){
+                dataChannelMap[peerId].send(message);
+                appendMessage(message, `${localId}->${peerId}`);
+            } else {
+                appendMessage("Invalid peer")
+            }
+        }
+
+        function updatePeerlist() {
+            peerList.innerHTML = "";
+            Object.keys(dataChannelMap).forEach(id => peerList.append(id + '\n'));
+        }
+
+        function appendMessage(message, sender = "info") {
+            messageArea.append(`[${sender}]: ${message}\n`);
+        }
+
+        function sendLocalDescription(ws, id, pc, type) {
+            (type == 'offer' ? pc.createOffer() : pc.createAnswer())
+                .then((desc) => pc.setLocalDescription(desc))
+                .then(() => {
+                    const { sdp, type } = pc.localDescription;
+                    ws.send(JSON.stringify({
+                        id,
+                        type,
+                        description: sdp,
+                    }));
+                });
+        }
+
+        function sendLocalCandidate(ws, id, cand) {
+            const { candidate, sdpMid } = cand;
+            ws.send(JSON.stringify({
+                id,
+                type: 'candidate',
+                candidate,
+                mid: sdpMid,
+            }));
+        }
+
+        // Helper function to generate a random ID
+        function randomId(length) {
+            const characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+            const pickRandom = () => characters.charAt(Math.floor(Math.random() * characters.length));
+            return [...Array(length)].map(pickRandom).join('');
+        }
+
+    });
 });
