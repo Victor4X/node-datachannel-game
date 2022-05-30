@@ -46,6 +46,8 @@ window.onload = (() => {
         const dataChannelMap = {};
 
         const peerList = document.getElementById('peerList');
+        const publicList = document.getElementById('publicList');
+        const publicRefreshBtn = document.getElementById('publicRefreshBtn');
         const messageArea = document.getElementById('messageArea');
 
         const offerId = document.getElementById('offerId');
@@ -171,10 +173,14 @@ window.onload = (() => {
             dc.onopen = () => {
                 console.log(`DataChannel from ${id} open`);
                 updatePeerlist();
+                updatePubliclist();
 
                 sendMsg.disabled = false;
                 sendBtn.disabled = false;
                 sendBtn.onclick = () => sendToAllChannels(sendMsg.value);
+
+                publicRefreshBtn.disabled = false;
+                publicRefreshBtn.onclick = () => updatePubliclist();
 
                 sendWhisperMsg.disabled = false;
                 sendWhisperPeer.disabled = false;
@@ -219,6 +225,12 @@ window.onload = (() => {
         function updatePeerlist() {
             peerList.innerHTML = "";
             Object.keys(dataChannelMap).forEach(id => peerList.append(id + '\n'));
+        }
+
+        function updatePubliclist() {
+            // Get list from server
+            // Remove already connected
+            publicList.innerHTML = "";
         }
 
         function appendMessage(message, sender = "info") {

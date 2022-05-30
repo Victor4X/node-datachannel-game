@@ -18,6 +18,7 @@
  */
 
 const http = require('http');
+const { runInNewContext } = require('vm');
 const websocket = require('websocket');
 
 const clients = {};
@@ -25,7 +26,7 @@ const clients = {};
 const httpServer = http.createServer((req, res) => {
   console.log(`${req.method.toUpperCase()} ${req.url}`);
 
-  const respond = (code, data, contentType = 'text/plain') => {
+  const respondPlain = (code, data, contentType = 'text/plain') => {
     res.writeHead(code, {
       'Content-Type' : contentType,
       'Access-Control-Allow-Origin' : '*',
@@ -33,7 +34,19 @@ const httpServer = http.createServer((req, res) => {
     res.end(data);
   };
 
-  respond(404, 'Not Found');
+  const respondJson = (code, data, contentType = 'application/json') => {
+    res.writeHead(code, {
+      'Content-Type' : contentType,
+      'Access-Control-Allow-Origin' : '*',
+    });
+    res.end(JSON.stringify(data));
+  };
+
+  if (req.url == '/servers') {
+    respondJson(200, Object.keys(clients));
+  } else {
+    respondPlain(404, 'Not Found');
+  }
 });
 
 const wsServer = new websocket.server({httpServer});
