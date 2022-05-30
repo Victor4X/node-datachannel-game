@@ -250,7 +250,7 @@ window.onload = (() => {
 
         // Helper function to generate a random ID
         function randomId(length) {
-            const characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+            const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
             const pickRandom = () => characters.charAt(Math.floor(Math.random() * characters.length));
             return [...Array(length)].map(pickRandom).join('');
         }
